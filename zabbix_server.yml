@@ -1,0 +1,25 @@
+---
+    - name: install zabbix-release
+      yum: name=zabbix-release-3.4-1.el7.centos.noarch state=latest
+
+    - name: yum zabbix_server
+      yum: pkg={{ item }} state=latest
+      with_items:
+        - "zabbix-server-mysql"
+        - "zabbix-web-mysql"
+        - "zabbix-agent"
+
+    - name: enable & restart zabbix_server zabbix_agent
+      shell: "systemctl enable zabbix-server && systemctl enable zabbix-agent"
+      tags:
+        - zabbix_server
+        - zabbix_agent
+      notify:
+        - restart zabbix_server
+        - restart zabbix_agentd
+
+    - name: modify config
+      shell: "sed -i '/^# PidFile=/a PidFile=/tmp/zabbix_server.pid'/ {{ install_dir }} && sed -i 's/^DBName=zabbix/DBName={{ server_name }}/' {{ install_dir }} && sed -i 's/^DBUser=zabbix/DBUser={{ server_user }}/' {{ install_dir }} && sed -i 's/^# DBPassword=/DBPassword={{ server_password }}/' {{ install_dir }} && sed -i 's/^# ListenIP=127.0.0.1/ListenIP={{ server_ip }}/' {{ install_dir }} && sed -i 's/Hostname=Zabbix server/Hostname={{ hostname }}/g' {{ config_agent }} && sed -i 's/^# ListenIP=127.0.0.1/ListenIP={{ server_ip }}/' {{ config_agent }} &&sed -i 's/^SELINUX=enforcing/SELINUX=permissive/' {{ selinux_file}}"
+      notify:
+        - restart zabbix_server
+        - restart zabbix_agentd

@@ -1,0 +1,22 @@
+---
+    - name: install apache environment
+      yum: pkg={{ item }} state=latest
+      with_items:
+        - httpd
+        - httpd-devel
+      tags:
+        - apache
+    - name: "enable Apache"
+      shell: "systemctl enable httpd"
+      tags:
+        - enable
+      notify:
+        - restart httpd
+    - name: "set firewalld"
+      shell: "firewall-cmd --permanent --add-port={80/tcp,10051/tcp} && firewall-cmd --reload"
+      tags:
+        - firewalld
+    - name: "modify Apache"
+      shell: "sed -i '/^# php_value date.timezone Europe/Riga/a php_value date.timezone Asia/Shanghai/' {{ php_config }}"
+      notify:
+        - restart httpd

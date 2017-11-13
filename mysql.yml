@@ -1,0 +1,28 @@
+---
+    - name: install some package
+      yum: pkg={{ item }} state=latest
+      with_items:
+        - "mariadb"
+        - "mariadb-server"
+        - "MySQL-python"
+
+    - name: enable & restart mysql
+      shell: "systemctl enable mariadb && systemctl restart mariadb"
+      tags:
+         - enable
+      notify:
+          - restart mariadb
+
+    - name: MySQL | Create database
+      mysql_db: name={{server_name}} state=absent encoding=utf8 collation=utf8_bin
+      tags:
+         - mysql
+
+    - name: MySQL | Create database user
+      mysql_user: name={{server_user}} password={{server_password}}  priv={{server_name}}.*:ALL state=present
+      tags:
+        - mysql
+
+    - name: zcat mysql
+      shell: "zcat {{ local_dir }}/zabbix-server-mysql-*/create.sql.gz | mysql -u{{server_user}} -p{{server_password}} {{server_name}}”
+
